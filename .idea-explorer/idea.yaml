@@ -1,0 +1,27 @@
+idea:
+  title: Does Chain of Thought cause models to converge more?
+  domain: nlp
+  hypothesis: 'Investigate whether the use of Chain of Thought in large language models
+    leads to increased or decreased convergence in model representations and persona.
+
+    '
+  background:
+    description: 'LLMs and many generative models appear to be converging in representations
+      and persona. This idea explores whether Chain of Thought causes more or less
+      convergence.
+
+      '
+    papers:
+    - description: https://arxiv.org/abs/2405.07987
+    - description: https://arxiv.org/abs/2504.08775
+    - description: https://cichicago.substack.com/p/persona-collapse
+    - description: https://arxiv.org/abs/2510.22954
+  metadata:
+    author: Ari Holtzman
+    source: IdeaHub
+    source_url: https://hypogenic.ai/ideahub/idea/vbUl35tUGNzskaqwPcCq
+    idea_id: does_chain_of_thought_cause_mo_20260222_143705_079862c8
+    created_at: '2026-02-22T14:37:05.520201'
+    status: submitted
+    github_repo_name: chain-of-thought-conv-1189-codex
+    github_repo_url: https://github.com/Hypogenic-AI/chain-of-thought-conv-1189-codex
