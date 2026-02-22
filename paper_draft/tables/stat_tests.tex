@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\resizebox{0.95\linewidth}{!}{%
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Effect (CoT$-$NoCoT)} & \textbf{Raw $p$} & \textbf{FDR $p$} & \textbf{Cohen's $d$} & \textbf{95\% CI} \\
+\midrule
+\gptmodel \gsm accuracy & 0.0067 & 0.0566 & 0.562 & [-0.001, 0.601] \\
+\gsm agreement & 0.0114 & 0.0647 & 0.485 & [0.032, 0.501] \\
+\claudemodel persona stability & {\bf 0.00085} & {\bf 0.0145} & -0.679 & [-0.159, -0.049] \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Representative hypothesis-test outcomes from the full test suite. The persona-stability drop for \claudemodel is the only robust effect after FDR correction.}
+\label{tab:stat_tests}
+\end{table}

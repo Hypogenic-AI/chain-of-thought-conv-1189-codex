@@ -1,0 +1,13 @@
+task,model,condition,accuracy
+bbh_date,anthropic/claude-sonnet-4.5,cot,0.8333333333333334
+bbh_date,anthropic/claude-sonnet-4.5,no_cot,0.9
+bbh_date,gpt-4.1,cot,0.26666666666666666
+bbh_date,gpt-4.1,no_cot,0.3333333333333333
+bbh_logic,anthropic/claude-sonnet-4.5,cot,0.9333333333333333
+bbh_logic,anthropic/claude-sonnet-4.5,no_cot,1.0
+bbh_logic,gpt-4.1,cot,1.0
+bbh_logic,gpt-4.1,no_cot,0.9333333333333333
+gsm8k,anthropic/claude-sonnet-4.5,cot,0.9
+gsm8k,anthropic/claude-sonnet-4.5,no_cot,0.9
+gsm8k,gpt-4.1,cot,0.9
+gsm8k,gpt-4.1,no_cot,0.6

@@ -1,0 +1,61 @@
+[
+  {
+    "name": "openai/gsm8k",
+    "config": "main",
+    "local_path": "datasets/gsm8k_main",
+    "splits": {
+      "train": 7473,
+      "test": 1319
+    },
+    "features": {
+      "train": "{'question': Value('string'), 'answer': Value('string')}",
+      "test": "{'question': Value('string'), 'answer': Value('string')}"
+    }
+  },
+  {
+    "name": "truthfulqa/truthful_qa",
+    "config": "generation",
+    "local_path": "datasets/truthfulqa_generation",
+    "splits": {
+      "validation": 817
+    },
+    "features": {
+      "validation": "{'type': Value('string'), 'category': Value('string'), 'question': Value('string'), 'best_answer': Value('string'), 'correct_answers': List(Value('string')), 'incorrect_answers': List(Value('string')), 'source': Value('string')}"
+    }
+  },
+  {
+    "name": "AlekseyKorshuk/persona-chat",
+    "config": null,
+    "local_path": "datasets/persona_chat",
+    "splits": {
+      "train": 17878,
+      "validation": 1000
+    },
+    "features": {
+      "train": "{'personality': List(Value('string')), 'utterances': List({'candidates': List(Value('string')), 'history': List(Value('string'))})}",
+      "validation": "{'personality': List(Value('string')), 'utterances': List({'candidates': List(Value('string')), 'history': List(Value('string'))})}"
+    }
+  },
+  {
+    "name": "lukaemon/bbh",
+    "config": "date_understanding",
+    "local_path": "datasets/bbh_date_understanding",
+    "splits": {
+      "test": 250
+    },
+    "features": {
+      "test": "{'input': Value('string'), 'target': Value('string')}"
+    }
+  },
+  {
+    "name": "lukaemon/bbh",
+    "config": "logical_deduction_three_objects",
+    "local_path": "datasets/bbh_logical_deduction_three_objects",
+    "splits": {
+      "test": 250
+    },
+    "features": {
+      "test": "{'input': Value('string'), 'target': Value('string')}"
+    }
+  }
+]

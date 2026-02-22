@@ -1,0 +1,15 @@
+{
+  "datasets": {
+    "gsm8k_test_rows": 1319,
+    "bbh_date_rows": 250,
+    "bbh_logic_rows": 250,
+    "persona_validation_rows": 1000
+  },
+  "missing_checks": {
+    "gsm8k_missing_question": 0,
+    "bbh_date_missing_input": 0,
+    "bbh_logic_missing_input": 0,
+    "persona_missing_personality": 0
+  },
+  "timestamp_utc": "2026-02-22T21:00:05.384011+00:00"
+}

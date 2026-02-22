@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-02-22T14:37:10.765050",
+  "stages": {
+    "resource_finder": {
+      "status": "completed",
+      "started_at": "2026-02-22T14:37:10.765339",
+      "completed_at": "2026-02-22T14:47:04.400704",
+      "success": true,
+      "outputs": {
+        "literature_review": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/literature_review.md",
+        "resources_catalog": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/resources.md",
+        "papers_dir": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/papers",
+        "datasets_dir": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/datasets",
+        "code_dir": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/code"
+      }
+    },
+    "experiment_runner": {
+      "status": "completed",
+      "started_at": "2026-02-22T14:47:04.401134",
+      "completed_at": "2026-02-22T15:19:44.715181",
+      "success": true,
+      "outputs": {
+        "success": true,
+        "return_code": 0,
+        "elapsed_time": 1960.3018243312836,
+        "log_file": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/logs/execution_codex.log",
+        "transcript_file": "/data/hypogenicai/workspaces/chain-of-thought-conv-1189-codex/logs/execution_codex_transcript.jsonl"
+      }
+    }
+  },
+  "current_stage": null,
+  "completed": true,
+  "completed_at": "2026-02-22T15:19:44.715821"
+}

@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Metric} & \textbf{Slice} & \textbf{\nocot} & \textbf{\cotprompt} \\
+\midrule
+Cross-model answer agreement & \gsm & 0.633 & {\bf 0.900} \\
+Cross-model answer agreement & \bbhdate & {\bf 0.300} & {\bf 0.300} \\
+Cross-model answer agreement & \bbhlogic & {\bf 0.933} & {\bf 0.933} \\
+\midrule
+Persona adherence & \gptmodel & 0.385 & {\bf 0.389} \\
+Persona adherence & \claudemodel & {\bf 0.439} & 0.416 \\
+Persona stability & \gptmodel & {\bf 0.758} & 0.735 \\
+Persona stability & \claudemodel & {\bf 0.857} & 0.753 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Agreement and persona metrics across prompting conditions. CoT improves agreement only on \gsm and reduces persona stability for both models, with a large drop for \claudemodel.}
+\label{tab:agreement_persona}
+\end{table*}

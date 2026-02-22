@@ -1,0 +1,5 @@
+model,condition,within_model_persona_stability
+anthropic/claude-sonnet-4.5,cot,0.7527056076578135
+anthropic/claude-sonnet-4.5,no_cot,0.8567190827380934
+gpt-4.1,cot,0.734732131991791
+gpt-4.1,no_cot,0.7582807014256737

@@ -1,0 +1,11 @@
+\section{Discussion}
+\label{sec:discussion}
+\para{Interpretation.} Our findings reject a simple claim that CoT increases convergence globally. Instead, CoT behaves as a targeted intervention: it can align models on specific structured tasks (\gsm), while leaving other tasks unchanged or worse and reducing persona stability. This pattern is consistent with prior evidence that rationale quality and decision faithfulness can diverge \citep{turpin2023language,ley2024hardness}.
+
+\para{Why the trade-off may occur.} CoT imposes a reasoning format that can regularize final answers for arithmetic tasks, which may explain stronger agreement on \gsm. In persona-conditioned dialogue, the same format introduces explanatory content that competes with role expression, reducing response consistency across repeats.
+
+\para{Practical implications.} Deployment should optimize the reliability target explicitly. If the goal is higher arithmetic agreement, CoT may help. If the goal is stable persona behavior in conversational agents, \nocot or alternative controls may be safer defaults. Multi-model systems should track axis-specific reliability rather than reporting a single aggregate "consistency" score.
+
+\para{Limitations.} First, subset size is small (30 per dataset slice), limiting power for moderate effects. Second, persona metrics use embedding proxies rather than human judgments. Third, only two models are tested, and both are closed APIs with no access to internal activations. Fourth, two repeats for persona stability provide only a minimal variance estimate.
+
+\para{Broader implications and risk.} CoT can improve perceived rigor of outputs while masking instability in behavior dimensions users care about. Evaluations for safety-critical or user-facing applications should therefore include explicit persona and semantic consistency tests, not only correctness on benchmark labels.

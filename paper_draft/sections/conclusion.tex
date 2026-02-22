@@ -1,0 +1,7 @@
+\section{Conclusion}
+\label{sec:conclusion}
+We presented a unified evaluation of whether chain-of-thought prompting increases convergence in frontier language models across answer, semantic, and persona dimensions. Across \gptmodel and \claudemodel, CoT effects were mixed: beneficial on selected reasoning outcomes, neutral on others, and harmful for persona stability in the strongest statistically supported result.
+
+The key takeaway is straightforward: CoT is not a universal convergence mechanism. It is a conditional tool whose value depends on the specific reliability axis and task distribution.
+
+Future work should increase sample sizes (\eg at least 100 items per slice), include self-consistency decoding to disentangle reasoning-format and decoding effects, and add human-rated persona consistency with inter-annotator agreement. Extending evaluation to additional models and long-horizon multi-turn settings will further clarify when CoT improves reliability versus when it introduces instability.

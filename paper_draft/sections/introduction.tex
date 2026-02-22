@@ -1,0 +1,19 @@
+\section{Introduction}
+\label{sec:introduction}
+Reliability in language-model systems depends on more than accuracy. In production settings, teams often care about whether outputs converge across models, prompts, and repeated generations. Chain-of-thought (CoT) prompting is now a standard intervention for reasoning tasks, but its effect on broader convergence remains unclear.
+
+\para{\textbf{what is missing?}} Prior studies establish that CoT can improve reasoning performance, especially on multi-step tasks \citep{wei2022chain,kojima2022large,wang2022self}. At the same time, faithfulness work shows that verbalized rationales may diverge from true decision factors \citep{turpin2023language,ley2024hardness}, and persona work reports instability in self-consistent behavior \citep{alikhani2024evaluating,ai2024self,xu2024self}. Existing evidence therefore does not answer whether CoT improves global convergence across answer, semantic, and persona dimensions under a single matched protocol.
+
+\para{\textbf{our main question.}} We examine whether CoT makes frontier models converge more, rather than only score higher on selected benchmarks. We compare \nocot and \cotprompt for \gptmodel and \claudemodel across three reasoning datasets and one persona dataset, then evaluate convergence with discrete and embedding-based metrics.
+
+\para{\textbf{quantitative preview.}} CoT increases \gptmodel accuracy on \gsm by 30.0 points (0.600 to 0.900) and raises cross-model agreement on \gsm by 26.7 points (0.633 to 0.900). However, convergence does not improve on BBH subsets, and persona stability for \claudemodel decreases by 10.4 points (0.857 to 0.753), the only effect that remains significant after FDR correction.
+
+Our contributions are:
+\begin{itemize}
+    \item We propose \evalsuite, a unified evaluation protocol that measures answer-level, semantic, and persona convergence under matched prompting controls.
+    \item We conduct controlled experiments on real API models and four benchmark families using deterministic subsampling, standardized parsing, and cached execution.
+    \item We show that CoT yields axis-specific effects: improvements in some reasoning settings but a significant degradation in persona stability for \claudemodel.
+    \item We provide a practical decision framing: CoT should be selected by target reliability axis, not assumed to be a global convergence enhancer.
+\end{itemize}
+
+\para{Paper organization.} \Secref{sec:related_work} situates our work in CoT, faithfulness, and persona-consistency literature. \Secref{sec:methodology} describes datasets, prompting conditions, and metrics. \Secref{sec:results} presents empirical results and statistical tests. \Secref{sec:discussion} discusses implications and limitations, and \Secref{sec:conclusion} concludes.

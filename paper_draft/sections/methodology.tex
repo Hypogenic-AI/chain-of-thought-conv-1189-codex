@@ -1,0 +1,28 @@
+\section{Methodology}
+\label{sec:methodology}
+\para{\textbf{what do we test?}} We test whether CoT increases convergence across three dimensions: (1) reasoning answers, (2) semantic output representations, and (3) persona behavior. We compare \nocot and \cotprompt with identical datasets and fixed controls.
+
+\subsection{Experimental Setup}
+We evaluate two API models: \gptmodel (OpenAI) and \claudemodel (via OpenRouter's OpenAI-compatible interface). We use \gsm (1,319 items), \bbhdate (250), \bbhlogic (250), and \personachat (1,000 validation dialogues). For compute and cost control, we apply deterministic subsampling (seed 42) to 30 examples per dataset while keeping item identities fixed across all conditions.
+
+No model training or fine-tuning is performed. We run evaluation only. Reasoning prompts use temperature 0.0. Persona prompts use temperature 0.7 with two repeated generations per item to estimate stability under stochastic decoding. Maximum generation length is 350 tokens.
+
+\subsection{Prompt Conditions and Parsing}
+The \nocot condition requests direct final outputs. The \cotprompt condition requests explicit step-by-step reasoning before a structured final field. For reasoning tasks, outputs are parsed from \texttt{FINAL\_ANSWER:}; for persona tasks, outputs are parsed from \texttt{RESPONSE:}. Gold labels are normalized using task-specific rules: numeric extraction after \texttt{\#\#\#\#} for \gsm and option-letter extraction for BBH tasks.
+
+\subsection{Convergence Metrics}
+We report:
+\begin{itemize}
+    \item \textbf{Accuracy}: exact normalized match to gold labels for \gsm and BBH tasks.
+    \item \textbf{Cross-model answer agreement}: exact-match agreement between \gptmodel and \claudemodel on each item.
+    \item \textbf{Cross-model semantic convergence}: cosine similarity between model output embeddings.
+    \item \textbf{Persona adherence}: cosine similarity between response embeddings and persona-profile embeddings.
+    \item \textbf{Persona stability}: within-model cosine similarity across repeated responses for the same persona prompt.
+\end{itemize}
+Embeddings are computed with \texttt{text-embedding-3-small} and cached for reproducibility.
+
+\subsection{Statistical Analysis}
+For each paired comparison (\cotprompt minus \nocot), we test normality of paired differences with Shapiro--Wilk. When normality holds, we use paired $t$-tests; otherwise, Wilcoxon signed-rank tests. We report raw $p$ values, 95\% confidence intervals of mean paired differences, and Cohen's $d$ for paired effects. Because we test multiple hypotheses, we apply Benjamini--Hochberg FDR correction with $\alpha=0.05$.
+
+\subsection{Baselines and Reproducibility}
+Our primary baseline is \nocot. CoT is the treatment condition. Infrastructure includes request-hash caching, retry/backoff, deterministic sampling manifests, and fixed seeds. The run produced 600 API outputs in approximately 23 minutes; analysis required approximately 7 seconds.

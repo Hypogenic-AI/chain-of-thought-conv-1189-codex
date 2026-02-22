@@ -1,0 +1,9 @@
+task,condition,cross_model_semantic_cosine
+bbh_date,cot,0.4929068667619534
+bbh_date,no_cot,0.49994142770720423
+bbh_logic,cot,0.949441502097446
+bbh_logic,no_cot,0.9746601903364028
+gsm8k,cot,0.9479424643794937
+gsm8k,no_cot,0.8893039355575472
+persona,cot,0.6198249825005742
+persona,no_cot,0.630678827693858

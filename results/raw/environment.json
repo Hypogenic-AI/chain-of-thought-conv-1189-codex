@@ -1,0 +1,16 @@
+{
+  "python": "3.12.2 | packaged by Anaconda, Inc. | (main, Feb 27 2024, 17:35:02) [GCC 11.2.0]",
+  "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31",
+  "libraries": {
+    "numpy": "2.4.2",
+    "pandas": "3.0.1",
+    "scipy": "1.17.0",
+    "scikit_learn": "1.8.0",
+    "matplotlib": "3.10.8",
+    "seaborn": "0.13.2",
+    "openai": "2.21.0",
+    "statsmodels": "0.14.6",
+    "datasets": "4.5.0"
+  },
+  "gpu_info": "name, memory.total [MiB], memory.free [MiB]\nNVIDIA GeForce RTX 3090, 24576 MiB, 24161 MiB\nNVIDIA GeForce RTX 3090, 24576 MiB, 24161 MiB"
+}

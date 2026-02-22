@@ -1,0 +1,7 @@
+task,condition,cross_model_answer_agreement
+bbh_date,cot,0.3
+bbh_date,no_cot,0.3
+bbh_logic,cot,0.9333333333333333
+bbh_logic,no_cot,0.9333333333333333
+gsm8k,cot,0.9
+gsm8k,no_cot,0.6333333333333333

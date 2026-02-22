@@ -1,0 +1,841 @@
+You are an academic paper writer. Generate a complete NEURIPS style paper
+based on the experiment results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at .codex/skills/paper-writer/SKILL.md
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW EXAMPLES: Browse paper_examples/ for formatting and language patterns:
+   - Look at sections/1.introduction.tex for language style
+   - Look at tables/*.tex for table formatting
+   - Look at commands/*.tex for macro usage
+4. VERIFY COMMAND TEMPLATES: Command templates (math.tex, general.tex, macros.tex) are pre-copied to paper_draft/commands/
+
+CRITICAL: Reference example papers for FORMATTING and LANGUAGE STYLE only.
+Do NOT copy content, phrasing, or narrative structure from the example papers.
+The examples are in a different research domain - focus only on presentation style.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EXPERIMENT REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+# REPORT: Does Chain of Thought Cause Models to Converge More?
+
+## 1. Executive Summary
+This study tests whether Chain-of-Thought (CoT) prompting increases convergence in LLM behavior across (a) reasoning answers, (b) semantic output representations, and (c) persona behavior consistency.
+
+Using real API models (`gpt-4.1` and `anthropic/claude-sonnet-4.5`) on local pre-gathered datasets (GSM8K, BBH date/logical subsets, Persona-Chat), CoT produced **mixed effects**: it improved GSM8K agreement/accuracy in some cases, but did not consistently improve convergence across tasks and significantly reduced persona stability for Claude.
+
+Practical implication: CoT should not be assumed to globally increase model convergence. It can improve convergence on specific reasoning tasks while simultaneously reducing stability in persona-conditioned generation.
+
+## 2. Goal
+### Hypothesis
+Investigate whether use of CoT causes increased convergence in model representations and persona, rather than only improving surface task performance.
+
+### Why Important
+If CoT changes reliability characteristics, this impacts deployment choices in multi-model systems, agent workflows, and safety-critical conversational settings.
+
+### Problem Solved
+Provides a unified measurement protocol across answer agreement, semantic convergence, and persona consistency under matched experimental controls.
+
+### Expected Impact
+Helps practitioners choose prompting strategies based on stability/convergence goals instead of accuracy-only optimization.
+
+## 3. Data Construction
+### Dataset Description
+- GSM8K (`datasets/gsm8k_main/`): arithmetic reasoning benchmark, 1,319 test items.
+- BBH Date Understanding (`datasets/bbh_date_understanding/`): 250 test items.
+- BBH Logical Deduction (3 objects) (`datasets/bbh_logical_deduction_three_objects/`): 250 test items.
+- Persona-Chat (`datasets/persona_chat/`): 1,000 validation dialogues.
+
+### Example Samples
+| Dataset | Input Example (truncated) | Label/Target |
+|---|---|---|
+| GSM8K | &#34;Natalia sold clips... How many altogether?&#34; | `72` |
+| BBH Date | &#34;Today is Christmas Eve of 1937...&#34; | `(B)` |
+| BBH Logic | &#34;Three birds... fixed order...&#34; | `(A)` |
+
+Persona-Chat sample persona traits:
+```text
+- i like to remodel homes .
+- i like to go hunting .
+- i like to shoot a bow .
+- my favorite holiday is halloween .
+```
+
+### Data Quality
+From `results/raw/data_profile.json`:
+- Missing values:
+  - `gsm8k_missing_question`: 0
+  - `bbh_date_missing_input`: 0
+  - `bbh_logic_missing_input`: 0
+  - `persona_missing_personality`: 0
+- Outlier policy: no row deletion; bounded deterministic subsampling.
+- Class distribution: N/A (task-specific mixed benchmarks).
+
+### Preprocessing Steps
+1. Deterministic subsampling with seed 42 (`results/raw/sample_manifest.json`):
+   - GSM8K: 30
+   - BBH date: 30
+   - BBH logic: 30
+   - Persona: 30
+2. Gold-answer normalization:
+   - GSM8K: parse numeric final answer after `####`.
+   - BBH: parse option letter `(A)-(F)`.
+3. Output parsing:
+   - Reasoning tasks: parse `FINAL_ANSWER:`.
+   - Persona tasks: parse `RESPONSE:`.
+4. Embedding computation using `text-embedding-3-small` with cache (`results/raw/embedding_cache.json`).
+
+### Train/Val/Test Splits
+No model training/fine-tuning was performed.
+- Evaluation-only protocol on benchmark test/validation splits.
+- Deterministic sampled subsets used consistently across conditions.
+
+## 4. Experiment Description
+### Methodology
+#### High-Level Approach
+Compare `no_cot` vs `cot` prompt conditions across two real frontier models, then evaluate convergence with both discrete agreement metrics and continuous embedding-space metrics.
+
+#### Why This Method
+- Directly maps to hypothesis dimensions (answer, representation, persona).
+- Uses objective labels where available (GSM8K/BBH).
+- Adds persona-specific metrics for behavior stability.
+
+Alternatives considered but not used:
+- Latent activation-level convergence (not accessible for closed APIs).
+- Human persona annotation (higher cost/time in this session).
+
+### Implementation Details
+#### Tools and Libraries
+- Python 3.12
+- `openai 2.21.0`
+- `datasets 4.5.0`
+- `numpy 2.3.5`
+- `pandas 2.3.3`
+- `scipy 1.17.0`
+- `statsmodels 0.14.6`
+- `matplotlib 3.10.8`
+- `seaborn 0.13.2`
+
+#### Algorithms/Models
+- Model A: `gpt-4.1` (OpenAI).
+- Model B: `anthropic/claude-sonnet-4.5` (via OpenRouter OpenAI-compatible API).
+- Embeddings: `text-embedding-3-small`.
+
+#### Hyperparameters
+| Parameter | Value | Selection Method |
+|---|---:|---|
+| Seed | 42 | fixed reproducibility |
+| Reasoning temperature | 0.0 | deterministic answers |
+| Persona temperature | 0.7 | enable stochastic consistency checks |
+| Max tokens | 350 | practical output cap |
+| Persona repeats | 2 | minimal stability estimate |
+| Alpha | 0.05 | standard significance threshold |
+| Multiple-comparison correction | FDR (Benjamini-Hochberg) | controls false discovery rate |
+
+#### Training Procedure or Analysis Pipeline
+1. Run API calls with retries/backoff and request-hash caching in `src/run_experiments.py`.
+2. Parse outputs and compute correctness/agreement metrics.
+3. Embed output texts and persona profiles.
+4. Compute cross-model semantic convergence and persona adherence/stability.
+5. Run paired tests (`paired t` when normality held, else `Wilcoxon`).
+6. Apply FDR correction over all hypothesis tests.
+
+### Experimental Protocol
+#### Reproducibility Information
+- Number of runs for averaging: 1 main run + 1 deterministic analysis rerun.
+- Random seed: 42.
+- Hardware: 2x NVIDIA RTX 3090 (24GB each) available; API-based evaluation did not require GPU compute.
+- Batch sizes: training/inference batch-size not applicable (remote API calls).
+- Runtime: experiment execution ~23 minutes for 600 API outputs; analysis ~7 seconds.
+
+#### Evaluation Metrics
+- Accuracy (GSM8K/BBH): exact normalized match.
+- Cross-model answer agreement: exact-match agreement between two models per item.
+- Cross-model semantic cosine: cosine similarity between model output embeddings.
+- Persona adherence: cosine(response embedding, persona-profile embedding).
+- Persona stability: within-model cosine similarity across repeated stochastic generations.
+
+### Raw Results
+#### Tables
+Reasoning accuracy:
+
+| Task | Model | No-CoT | CoT |
+|---|---|---:|---:|
+| GSM8K | GPT-4.1 | 0.600 | 0.900 |
+| GSM8K | Claude Sonnet 4.5 | 0.900 | 0.900 |
+| BBH date | GPT-4.1 | 0.333 | 0.267 |
+| BBH date | Claude Sonnet 4.5 | 0.900 | 0.833 |
+| BBH logic | GPT-4.1 | 0.933 | 1.000 |
+| BBH logic | Claude Sonnet 4.5 | 1.000 | 0.933 |
+
+Cross-model answer agreement:
+
+| Task | No-CoT | CoT |
+|---|---:|---:|
+| GSM8K | 0.633 | 0.900 |
+| BBH date | 0.300 | 0.300 |
+| BBH logic | 0.933 | 0.933 |
+
+Persona metrics:
+
+| Metric | Model | No-CoT | CoT |
+|---|---|---:|---:|
+| Persona adherence | GPT-4.1 | 0.385 | 0.389 |
+| Persona adherence | Claude Sonnet 4.5 | 0.439 | 0.416 |
+| Persona stability | GPT-4.1 | 0.758 | 0.735 |
+| Persona stability | Claude Sonnet 4.5 | 0.857 | 0.753 |
+
+#### Visualizations
+- `results/plots/accuracy_by_task_condition.png`
+- `results/plots/semantic_convergence.png`
+- `results/plots/persona_adherence.png`
+- `results/plots/persona_stability.png`
+
+#### Output Locations
+- Results JSON: `results/metrics.json`
+- Statistical tests: `results/hypothesis_tests.csv`
+- Parsed frame: `results/analysis_frame.csv`
+- Plots: `results/plots/`
+- Raw model outputs: `results/raw/model_outputs.jsonl`
+
+## 5. Result Analysis
+### Key Findings
+1. CoT increased GSM8K performance and cross-model agreement for GPT-4.1, but effects were task-dependent.
+2. CoT did **not** yield consistent convergence gains across all tasks; BBH date/logical showed neutral or reversed changes.
+3. Persona stability decreased under CoT, strongest for Claude Sonnet 4.5.
+
+### Hypothesis Testing Results
+- Most tests were not significant after FDR correction.
+- Strongest significant effect:
+  - Persona stability (Claude): No-CoT &gt; CoT
+  - `p = 0.00085`, FDR-adjusted `p = 0.0145`, effect size `d = -0.679`, 95% CI for (CoT-NoCoT) `[-0.159, -0.049]`.
+- Near-significant (uncorrected) but not FDR-significant:
+  - GPT-4.1 GSM8K accuracy increase with CoT (`p = 0.0067`, FDR `0.0566`).
+  - GSM8K cross-model agreement increase (`p = 0.0114`, FDR `0.0647`).
+
+### Comparison to Baselines
+- CoT outperformed no-CoT clearly on GSM8K for GPT-4.1.
+- CoT did not outperform no-CoT on BBH date and partially regressed Claude on BBH logical/date.
+- For persona outcomes, no-CoT was often as good or better.
+
+### Surprises and Insights
+- GPT-4.1 no-CoT underperformed sharply on sampled GSM8K, while CoT closed most of that gap.
+- Claude showed high baseline persona stability, but CoT noticeably reduced it.
+- Convergence behavior is axis-specific: gains in one domain do not transfer automatically.
+
+### Error Analysis
+- Reasoning failures:
+  - BBH date mistakes often linked to option extraction/temporal confusion.
+  - GPT-4.1 no-CoT GSM8K failures often incorrect final arithmetic value despite concise format.
+- Persona failures:
+  - CoT responses introduced explanatory meta-text that diluted style consistency.
+
+### Limitations
+- Small subset size (30 per benchmark segment) limits power.
+- Persona metrics rely on embedding proxies, not human annotation.
+- API models are black-box; no internal activation-level representation analysis.
+- Two repeats for persona stability is minimal; more repeats would improve reliability.
+
+## 6. Conclusions
+CoT does not universally increase convergence. It improved convergence-related outcomes on GSM8K for GPT-4.1, but not on BBH tasks and significantly reduced persona stability for Claude Sonnet 4.5.
+
+Overall, evidence supports a **conditional** view: CoT may increase convergence for some structured reasoning outcomes but can reduce persona-level consistency and does not reliably increase global cross-model convergence.
+
+### Implications
+- Practical: choose CoT selectively by task and desired stability axis.
+- Theoretical: answer-level convergence and persona/semantic convergence should be modeled as distinct phenomena.
+
+### Confidence in Findings
+Moderate confidence for directional patterns, high confidence for the Claude persona-stability drop, lower confidence for borderline effects due to sample size.
+
+## 7. Next Steps
+### Immediate Follow-ups
+1. Increase sample sizes (&gt;=100 per task) to tighten confidence intervals and FDR robustness.
+2. Add self-consistency decoding condition (multi-sample vote) to isolate CoT vs decoding effects.
+
+### Alternative Approaches
+- Human-rated persona consistency rubric with inter-annotator agreement.
+- Entailment-based scoring for persona adherence instead of pure embedding cosine.
+
+### Broader Extensions
+- Extend to additional models (Gemini 2.5 Pro, GPT-5).
+- Test adversarial persona prompts and long-horizon multi-turn drift.
+
+### Open Questions
+- Does hidden reasoning (no explicit rationale output) preserve GSM8K gains without persona stability costs?
+- Are convergence effects primarily due to output-format constraints rather than reasoning itself?
+
+## References
+Primary references used in this study are listed in `literature_review.md` and `resources.md`, including:
+- Wei et al. (2022), Kojima et al. (2022), Wang et al. (2022)
+- Turpin et al. (2023), Xiao et al. (2023), Ley et al. (2024)
+- Alikhani et al. (2024), Ai et al. (2024), Xu et al. (2024)
+
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+# Research Plan: Does Chain of Thought Cause Models to Converge More?
+
+## Motivation &amp; Novelty Assessment
+
+### Why This Research Matters
+LLM outputs are increasingly used in settings where consistency across prompts, samples, and model families matters for trust and deployment safety. If Chain of Thought (CoT) changes convergence behavior, it affects reliability, auditing, and multi-model interoperability. Understanding whether CoT amplifies or reduces convergence helps practitioners choose prompting strategies for stable behavior rather than only peak accuracy.
+
+### Gap in Existing Work
+Prior work has shown that CoT can improve task accuracy and self-consistency, while separate literature shows rationale unfaithfulness and persona drift. However, the pre-gathered review indicates few studies jointly measure (a) answer-level convergence, (b) semantic representation convergence, and (c) persona convergence under matched prompting conditions across modern API models.
+
+### Our Novel Contribution
+We run a unified, controlled evaluation that compares no-CoT vs CoT across two real frontier models, quantifying convergence at three levels: answer agreement, embedding-space output convergence, and persona adherence/consistency. This directly tests whether CoT increases global convergence or only local task agreement.
+
+### Experiment Justification
+- Experiment 1: Reasoning-task convergence on GSM8K + BBH subsets. Needed to test whether CoT changes answer agreement and accuracy on tasks with objective labels.
+- Experiment 2: Representation convergence in embedding space. Needed because answer match alone can hide divergent rationales and semantic trajectories.
+- Experiment 3: Persona convergence on Persona-Chat. Needed to test whether CoT stabilizes or destabilizes persona expression under conversational generation.
+
+## Research Question
+Does Chain-of-Thought prompting lead to increased convergence in LLM behavior (answers, semantic representations, and persona expression), or does it primarily improve task performance without broader convergence?
+
+## Background and Motivation
+Literature review in `literature_review.md` shows a mixed picture: CoT and self-consistency often improve accuracy, but faithfulness studies report mismatches between stated reasoning and latent decision factors. Persona studies indicate nontrivial drift across contexts. This motivates a direct empirical test of convergence beyond accuracy.
+
+## Hypothesis Decomposition
+- H1 (Answer convergence): CoT increases answer agreement and task accuracy on structured reasoning tasks.
+- H2 (Representation convergence): CoT increases semantic convergence of model outputs (higher cosine similarity in embedding space).
+- H3 (Persona convergence): CoT decreases persona consistency by encouraging verbose task-oriented reasoning that dilutes role-conditioned style.
+- H0: No significant difference between no-CoT and CoT on convergence metrics.
+
+Independent variables:
+- Prompt condition: no-CoT vs CoT.
+- Model family: OpenAI GPT-4.1 and Claude Sonnet 4.5 (via OpenRouter).
+- Task type: reasoning vs persona response generation.
+
+Dependent variables:
+- Accuracy, exact-match agreement, cross-model agreement.
+- Embedding cosine similarity (within condition, across models/runs).
+- Persona adherence similarity and within-model response consistency.
+
+Confounds and controls:
+- Control decoding and temperature by condition.
+- Use identical datasets/examples across conditions.
+- Use fixed random seeds and cached API responses.
+
+## Proposed Methodology
+
+### Approach
+Use real API models and a common evaluation harness. Sample matched subsets from pre-downloaded datasets. Run no-CoT and CoT prompts under controlled settings, store raw outputs, compute metrics, and run paired statistical tests with effect sizes.
+
+### Experimental Steps
+1. Load and validate local datasets (`datasets/*`), extract task-ready examples.
+2. Build standardized prompt templates for no-CoT and CoT.
+3. Query two real models with retry + caching and structured outputs.
+4. Compute reasoning metrics (accuracy, agreement) for labeled tasks.
+5. Compute semantic convergence via OpenAI embeddings on responses.
+6. Compute persona adherence and consistency on Persona-Chat samples.
+7. Run statistical tests (paired t-test or Wilcoxon based on normality) and effect sizes.
+8. Generate plots/tables and compile report.
+
+### Baselines
+- Baseline A: Direct answer prompting (no-CoT).
+- Baseline B: CoT prompting (single sample).
+- Diagnostic baseline: random-answer sanity floor for labeled tasks.
+
+### Evaluation Metrics
+- Task accuracy (GSM8K, BBH).
+- Cross-model exact-answer agreement rate.
+- Embedding convergence: cosine similarity between model outputs per item.
+- Persona adherence: cosine(response, persona profile embedding).
+- Persona stability: average pairwise cosine across repeated generations for same model-condition-item.
+
+### Statistical Analysis Plan
+- Significance level: alpha = 0.05.
+- Normality check: Shapiro-Wilk on paired differences.
+- Primary tests: paired t-test if normal, otherwise Wilcoxon signed-rank.
+- Report p-values, 95% CI of mean difference, Cohen&#39;s d for paired effects.
+- Correct multiple comparisons with Benjamini-Hochberg FDR.
+
+## Expected Outcomes
+Support for &#34;CoT causes more convergence&#34; would require significant improvements in multiple convergence metrics (not just accuracy). Mixed outcomes (e.g., higher accuracy but unchanged or worse persona convergence) would support partial-convergence interpretations.
+
+## Timeline and Milestones
+- M1 (20 min): setup, resource verification, planning.
+- M2 (45 min): implement evaluation pipeline and data loading.
+- M3 (60 min): run API experiments with caching.
+- M4 (40 min): analysis, statistics, plots.
+- M5 (30 min): REPORT.md + README.md + validation rerun.
+
+## Potential Challenges
+- API transient failures or rate limits: handled with retries/backoff and caching.
+- Output formatting variability: robust parsers and fallback extraction.
+- Cost/time growth: bounded sample sizes and deterministic subsampling.
+- Persona metric noise: use multiple runs and confidence intervals.
+
+## Success Criteria
+- End-to-end reproducible pipeline in `src/` with saved raw outputs.
+- Statistical comparison of no-CoT vs CoT on all planned metrics.
+- Clear evidence in `REPORT.md` that either supports or refutes increased convergence.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+# Literature Review: Does Chain-of-Thought Cause Models to Converge More?
+
+## Research Area Overview
+This review studies whether Chain-of-Thought (CoT) prompting increases convergence in large language models (LLMs), where convergence means stable internal reasoning traces, stable outputs across samples/prompts, and stable persona behavior across contexts. The literature indicates a mixed pattern: CoT often improves task accuracy and can improve answer-level convergence (e.g., under self-consistency), but textual rationales are frequently unfaithful to latent computation, and persona-conditioned behavior can still drift.
+
+## Review Scope
+
+### Research Question
+Does CoT cause LLMs to converge more in representation and persona, or does it mainly improve surface-level answer quality without faithful internal convergence?
+
+### Inclusion Criteria
+- CoT methods or CoT faithfulness analysis
+- LLM reasoning benchmarks (math, logic, commonsense)
+- Persona/self-consistency studies in LLM outputs
+- Publicly accessible papers and reproducible datasets/code
+
+### Exclusion Criteria
+- Papers unrelated to LLM reasoning or persona consistency
+- Non-public or inaccessible papers
+- Purely theoretical work without empirical LLM evaluation
+
+### Time Frame
+2022-2024 (plus foundational context)
+
+### Sources
+- paper-finder output (local service)
+- arXiv retrieval
+- HuggingFace datasets
+- GitHub repositories
+
+## Search Log
+
+| Date | Query | Source | Results | Notes |
+|------|-------|--------|---------|-------|
+| 2026-02-22 | &#34;chain of thought convergence model representations persona large language models&#34; | paper-finder | 308 | Used as broad candidate pool; manually curated for direct relevance |
+| 2026-02-22 | &#34;chain of thought prompting large language models reasoning&#34; | arXiv API | multiple | Selected foundational CoT papers |
+| 2026-02-22 | &#34;chain of thought faithfulness language models&#34; | arXiv API | multiple | Selected faithfulness-focused papers |
+| 2026-02-22 | &#34;persona consistency large language models&#34; | arXiv API | multiple | Selected persona/self-knowledge papers |
+
+## Screening Results
+
+| Paper | Title Screen | Abstract Screen | Full-Text/Chunk Screen | Notes |
+|------|--------------|-----------------|------------------------|-------|
+| 2201.11903 | Include | Include | Include (deep) | Foundational CoT effects and scaling |
+| 2205.11916 | Include | Include | Include | Zero-shot CoT baseline |
+| 2203.11171 | Include | Include | Include | Convergence via self-consistency voting |
+| 2305.04388 | Include | Include | Include (deep) | Unfaithful CoT explanations |
+| 2301.13379 | Include | Include | Include | Faithful CoT methods |
+| 2406.10625 | Include | Include | Include (deep) | Faithfulness-accuracy tradeoff |
+| 2305.17306 | Include | Include | Include | Benchmark infrastructure |
+| 2405.20253 | Include | Include | Include | Persona-steered behavior analysis |
+| 2402.14679 | Include | Include | Include (deep) | Self-knowledge/action consistency |
+| 2407.01505 | Include | Include | Include | Self-cognition consistency signals |
+
+## Key Papers
+
+### Paper 1: Chain-of-Thought Prompting Elicits Reasoning in Large Language Models
+- **Authors**: Jason Wei et al.
+- **Year**: 2022
+- **Source**: arXiv (2201.11903)
+- **Key Contribution**: Demonstrates large gains from CoT prompting for sufficiently large models.
+- **Methodology**: Few-shot exemplars with intermediate reasoning steps.
+- **Datasets Used**: GSM8K, StrategyQA, CSQA, Date Understanding, Sports Understanding.
+- **Results**: Strong accuracy gains at larger scales; CoT can hurt smaller models.
+- **Code Available**: Partly via subsequent benchmark repos (e.g., CoT Hub).
+- **Relevance to Our Research**: Baseline evidence that CoT can increase output stability/accuracy, but not proof of internal convergence.
+
+### Paper 2: Large Language Models are Zero-Shot Reasoners
+- **Authors**: Takeshi Kojima et al.
+- **Year**: 2022
+- **Source**: arXiv (2205.11916)
+- **Key Contribution**: Introduces zero-shot trigger for reasoning (&#34;Let&#39;s think step by step&#34;).
+- **Methodology**: Prompting-only intervention without demonstrations.
+- **Datasets Used**: Arithmetic and commonsense reasoning tasks.
+- **Results**: Major zero-shot gains, especially on multi-step tasks.
+- **Code Available**: No official full benchmark package; easy to replicate.
+- **Relevance to Our Research**: Enables controlled CoT-vs-non-CoT ablation with minimal confounds.
+
+### Paper 3: Self-Consistency Improves Chain of Thought Reasoning in Language Models
+- **Authors**: Xuezhi Wang et al.
+- **Year**: 2022
+- **Source**: arXiv (2203.11171)
+- **Key Contribution**: Replaces greedy CoT with sampled reasoning paths plus answer marginalization.
+- **Methodology**: Decode multiple CoTs, choose consensus answer.
+- **Datasets Used**: GSM8K and other reasoning benchmarks.
+- **Results**: Consistent gains across tasks.
+- **Code Available**: Community implementations exist.
+- **Relevance to Our Research**: Directly operationalizes convergence as agreement across multiple trajectories.
+
+### Paper 4: Language Models Don&#39;t Always Say What They Think
+- **Authors**: Miles Turpin et al.
+- **Year**: 2023
+- **Source**: arXiv (2305.04388)
+- **Key Contribution**: Shows CoT explanations can be systematically unfaithful.
+- **Methodology**: Bias-feature interventions and explanation-behavior mismatch analysis.
+- **Datasets Used**: BBH variants, BBQ.
+- **Results**: CoT text often omits true decision factors.
+- **Code Available**: Partial artifacts in paper resources.
+- **Relevance to Our Research**: Evidence against equating textual convergence with representation convergence.
+
+### Paper 5: Faithful Chain-of-Thought Reasoning
+- **Authors**: Yaozong Xiao et al.
+- **Year**: 2023
+- **Source**: arXiv (2301.13379)
+- **Key Contribution**: Proposes methods to improve rationale faithfulness.
+- **Methodology**: Faithfulness-aware constraints/objectives for generated rationales.
+- **Datasets Used**: Reasoning benchmarks with explanation settings.
+- **Results**: Better explanation faithfulness while retaining performance.
+- **Code Available**: Limited public release (check paper links).
+- **Relevance to Our Research**: Candidate baseline when testing whether CoT can be made to converge internally.
+
+### Paper 6: On the Hardness of Faithful CoT Reasoning in LLMs
+- **Authors**: Dan Ley et al.
+- **Year**: 2024
+- **Source**: arXiv (2406.10625)
+- **Key Contribution**: Finds it difficult to jointly optimize accuracy and CoT faithfulness.
+- **Methodology**: Early-answering faithfulness metrics, intervention and in-context strategies.
+- **Datasets Used**: AQuA, LogiQA, TruthfulQA.
+- **Results**: No single intervention consistently improves both faithfulness and accuracy.
+- **Code Available**: Referenced in paper materials.
+- **Relevance to Our Research**: Strong recent evidence that convergence in explicit CoT does not guarantee latent convergence.
+
+### Paper 7: Chain-of-Thought Hub
+- **Authors**: Yao Fu et al.
+- **Year**: 2023
+- **Source**: arXiv (2305.17306)
+- **Key Contribution**: Centralized evaluation across complex reasoning tasks.
+- **Methodology**: Unified prompts/leaderboards for CoT-heavy tasks.
+- **Datasets Used**: GSM8K, MATH, MMLU, BBH, HumanEval.
+- **Results**: Highlights large variance across models/tasks.
+- **Code Available**: Yes (GitHub).
+- **Relevance to Our Research**: Provides practical evaluation backbone.
+
+### Paper 8: Evaluating LLM Biases in Persona-Steered Generation
+- **Authors**: Malihe Alikhani et al.
+- **Year**: 2024
+- **Source**: arXiv (2405.20253)
+- **Key Contribution**: Quantifies behavior changes under persona steering.
+- **Methodology**: Controlled persona prompts and bias analysis.
+- **Datasets Used**: Persona-oriented generation settings.
+- **Results**: Persona prompts alter outputs and can amplify biases.
+- **Code Available**: Limited.
+- **Relevance to Our Research**: Useful for persona-convergence analysis under CoT.
+
+### Paper 9: Is Self-knowledge and Action Consistent or Not
+- **Authors**: Yiming Ai et al.
+- **Year**: 2024
+- **Source**: arXiv (2402.14679)
+- **Key Contribution**: Measures mismatch between claimed personality and generated actions.
+- **Methodology**: Questionnaire-vs-scenario congruence metrics.
+- **Datasets Used**: Custom personality statements/scenarios.
+- **Results**: LLMs show weaker congruence than humans.
+- **Code Available**: Not prominent.
+- **Relevance to Our Research**: Direct operationalization of persona convergence.
+
+### Paper 10: Self-Cognition in LLMs: An Exploratory Study
+- **Authors**: Weichen Xu et al.
+- **Year**: 2024
+- **Source**: arXiv (2407.01505)
+- **Key Contribution**: Explores self-cognition consistency in model outputs.
+- **Methodology**: Self-referential probing tasks.
+- **Datasets Used**: Self-cognition evaluation sets.
+- **Results**: Incomplete and model-dependent self-consistency.
+- **Code Available**: Limited.
+- **Relevance to Our Research**: Additional evidence for/against persona and self-representation convergence.
+
+## Common Methodologies
+- CoT prompting: used in 2201.11903, 2205.11916, 2305.17306.
+- Multi-sample consensus (self-consistency): 2203.11171.
+- Faithfulness evaluation with intervention/truncation: 2305.04388, 2406.10625.
+- Persona/self-consistency probes: 2405.20253, 2402.14679, 2407.01505.
+
+## Standard Baselines
+- Direct answer prompting (no CoT).
+- Zero-shot CoT prompt trigger.
+- Few-shot CoT exemplars.
+- Self-consistency decoding over CoT samples.
+- Faithfulness-aware CoT variants (where available).
+
+## Evaluation Metrics
+- Task accuracy (GSM8K, BBH subtasks, TruthfulQA).
+- Agreement/convergence metrics across multiple CoT samples.
+- Faithfulness metrics (early-answering style and intervention sensitivity).
+- Persona congruence metrics (self-report vs behavior alignment).
+- Bias sensitivity metrics under controlled persona cues.
+
+## Datasets in the Literature
+- GSM8K: used for arithmetic reasoning and CoT gains.
+- BBH: used for challenging reasoning and bias-intervention analyses.
+- TruthfulQA: used for truthfulness and faithfulness stress testing.
+- Persona-oriented dialogue/scenario sets: used for consistency and bias analyses.
+
+## Gaps and Opportunities
+- Gap 1: Few studies jointly evaluate answer convergence, latent-faithfulness convergence, and persona convergence in one protocol.
+- Gap 2: Most CoT evaluations rely on textual traces; latent-state convergence measures are less standardized.
+- Gap 3: Persona consistency benchmarks are less mature than reasoning benchmarks.
+
+## Recommendations for Our Experiment
+- **Recommended datasets**: GSM8K + BBH (date/logical) for reasoning, TruthfulQA for reliability, Persona-Chat for persona drift.
+- **Recommended baselines**: no-CoT, zero-shot CoT, few-shot CoT, self-consistency CoT.
+- **Recommended metrics**: answer accuracy, inter-sample agreement, faithfulness proxy via truncation/intervention, persona congruence score.
+- **Methodological considerations**:
+  - Separate answer-level convergence from explanation faithfulness.
+  - Keep decoding settings fixed except CoT intervention.
+  - Track convergence over repeated seeds/prompts.
+  - Evaluate persona stability across both neutral and adversarial prompts.
+
+## Deep Reading Notes
+Detailed chunk-by-chunk reading artifacts for four key papers are stored in:
+- `papers/pages/`
+- `papers/deep_read_chunks_notes.md`
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete academic paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey main finding or contribution
+
+2. AUTHOR
+   - Use this exact author line in the \author{} block: Ari Holtzman and Idea-Explorer
+
+3. ABSTRACT (150-250 words)
+   - Problem statement
+   - Approach
+   - Key results
+   - Significance
+
+4. INTRODUCTION
+   - Research problem and motivation
+   - Gap in existing work
+   - Our contribution (be specific)
+   - Paper organization
+
+5. RELATED WORK
+   - Organized by theme/approach
+   - Position our work relative to prior work
+   - Cite papers from literature review
+
+6. METHODOLOGY
+   - Clear description of approach
+   - Experimental setup
+   - Datasets used
+   - Evaluation metrics
+   - Baselines
+
+7. RESULTS
+   - Present results with tables and figures
+   - Statistical analysis
+   - Comparison to baselines
+   - Ablation studies (if applicable)
+
+8. DISCUSSION
+   - Interpretation of results
+   - Limitations
+   - Broader implications
+
+9. CONCLUSION
+   - Summary of contributions
+   - Key findings
+   - Future work
+
+10. REFERENCES
+   - BibTeX format
+   - All cited papers
+
+════════════════════════════════════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction section
+│   ├── related_work.tex  # Related work section
+│   ├── methodology.tex   # Methodology section
+│   ├── results.tex       # Results section
+│   ├── discussion.tex    # Discussion section
+│   └── conclusion.tex    # Conclusion section
+├── figures/              # Directory for any generated figures
+├── tables/               # Directory for complex standalone tables
+└── appendix/             # Directory for appendix sections (if needed)
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/figures paper_draft/tables paper_draft/appendix)
+2. Write main.tex using the EXACT preamble for NEURIPS:
+
+   \documentclass{article}
+   \usepackage[final]{neurips_2025}  % NEURIPS style (neurips_2025.sty is in paper_draft/)
+   \usepackage[hidelinks]{hyperref}  % REQUIRED: clickable links
+   \usepackage{booktabs}  % REQUIRED: professional tables
+   \usepackage{graphicx}
+   \usepackage{amsmath,amssymb}
+
+   % Import command files
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+   % Use this bibliography style:
+   \bibliographystyle{plainnat}
+
+   \author{Ari Holtzman and Idea-Explorer}
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic tone throughout
+- All claims must be supported by data from the experiment report
+- Proper citations using \cite{} commands
+- Clear figures and tables with proper captions
+- NO placeholder text - every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                          LAB WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these lab-specific conventions to match our paper style:
+
+1. LANGUAGE STYLE:
+   - Use active voice: "We propose", "We examine", "We focus on"
+   - Be direct and confident: "Our main question is...", "We hypothesize that..."
+   - State things clearly and simply - prefer plain language over jargon
+   - Use bold questions as paragraph organizers: {\bf what is X?}
+   - Include specific quantitative claims: "8.97% over baseline"
+   - Avoid fancy wording: "utilize" → "use", "facilitate" → "help"
+
+2. INTRODUCTION STRUCTURE:
+   - Engaging hook (get to the point quickly)
+   - Problem importance
+   - Gap identification
+   - Your approach with method figure reference
+   - Quantitative preview of results
+   - Contribution bullets (3-4 items, action verbs)
+
+3. CONTRIBUTION LISTS:
+   \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+       \item We propose...
+       \item We conduct...
+       \item We complement...
+   \end{itemize}
+
+4. MODULAR COMMANDS STRUCTURE:
+   Command templates are pre-copied to paper_draft/commands/:
+   - math.tex: Math notation macros
+   - general.tex: Formatting macros
+   - macros.tex: Project-specific term definitions (customize this for your paper)
+
+   In main.tex, include:
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+5. REFERENCE CONVENTIONS:
+   Use reference macros from math.tex:
+   - \figref{fig:name} for "figure 1" (lowercase, in-sentence)
+   - \Figref{fig:name} for "Figure 1" (capitalized, start of sentence)
+   - \secref{sec:name} for "section 2"
+
+6. TEXT FORMATTING:
+   - Use \para{Header text} for bold paragraph headers
+   - Define method/dataset names with \textsc and \xspace:
+     \newcommand{\methodname}{\textsc{MethodName}\xspace}
+
+7. TABLE FORMATTING:
+   - Use booktabs package (no vertical lines)
+   - Use \resizebox{\textwidth}{!}{...} for wide tables
+   - Use @{} to remove padding at table edges
+   - Use \cmidrule(lr){x-y} for sub-headers
+   - Use \textsc{} for dataset/method names in headers
+   - Bold best results with {\bf ...}
+
+8. FIGURE FORMATTING:
+   - Use 0.32\textwidth for 3-column subfigures
+   - Use 0.95\linewidth for full-width figures
+   - Use \input{figures/legend} for shared legends
+   - Write self-contained captions explaining key observations
+
+9. RESULTS PRESENTATION:
+   - Define \increase and \decrease for colored arrows (green up, red down)
+   - Bold best results in tables
+   - Report confidence intervals when available
+
+10. ALGORITHM STYLING:
+    - Use algpseudocode with [noend]
+    - Use \triangleright for comments
+
+11. HYPERLINKS (REQUIRED):
+    - Always use \usepackage[hidelinks]{hyperref} or with colored links
+    - All citations, section refs, figure refs, table refs must be clickable
+    - This is essential for reader navigation
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read .codex/skills/paper-writer/SKILL.md for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Browse paper_examples/ for formatting and language patterns
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   LANGUAGE CHECK:
+   - [ ] Is the writing clear and jargon-free?
+   - [ ] Are claims specific with quantitative support?
+   - [ ] Is active voice used throughout?
+
+   FORMATTING CHECK:
+   - [ ] Does main.tex include \input{commands/math}, \input{commands/general}, \input{commands/macros}?
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Do tables use booktabs (no vertical lines)?
+   - [ ] Are best results bolded in tables?
+   - [ ] Are figures/tables properly captioned?
+
+   STRUCTURE CHECK:
+   - [ ] Does introduction follow: hook → importance → gap → approach → preview → contributions?
+   - [ ] Are contribution bullets specific with action verbs?
+   - [ ] Does the paper compile without errors?
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

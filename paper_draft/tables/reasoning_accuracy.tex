@@ -1,0 +1,19 @@
+\begin{table*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Task} & \textbf{Model} & \textbf{\nocot} & \textbf{\cotprompt} \\
+\midrule
+\gsm & \gptmodel & 0.600 & {\bf 0.900} \\
+\gsm & \claudemodel & {\bf 0.900} & {\bf 0.900} \\
+\bbhdate & \gptmodel & {\bf 0.333} & 0.267 \\
+\bbhdate & \claudemodel & {\bf 0.900} & 0.833 \\
+\bbhlogic & \gptmodel & 0.933 & {\bf 1.000} \\
+\bbhlogic & \claudemodel & {\bf 1.000} & 0.933 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Reasoning accuracy by task, model, and prompting condition. Best value per row is in \textbf{bold}. CoT helps \gptmodel on \gsm and \bbhlogic, but not \bbhdate; effects are mixed for \claudemodel.}
+\label{tab:reasoning_accuracy}
+\end{table*}

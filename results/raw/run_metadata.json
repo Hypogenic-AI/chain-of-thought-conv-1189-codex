@@ -1,0 +1,30 @@
+{
+  "seed": 42,
+  "models": [
+    {
+      "name": "gpt-4.1",
+      "provider": "openai"
+    },
+    {
+      "name": "anthropic/claude-sonnet-4.5",
+      "provider": "openrouter"
+    }
+  ],
+  "conditions": [
+    "no_cot",
+    "cot"
+  ],
+  "sample_sizes": {
+    "gsm8k": 30,
+    "bbh_date": 30,
+    "bbh_logic": 30,
+    "persona": 30
+  },
+  "persona_repeats": 2,
+  "timestamp_utc": "2026-02-22T21:17:47.882368+00:00",
+  "files": {
+    "sample_manifest": "results/raw/sample_manifest.json",
+    "outputs": "results/raw/model_outputs.jsonl",
+    "data_profile": "results/raw/data_profile.json"
+  }
+}

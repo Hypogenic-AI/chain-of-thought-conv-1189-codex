@@ -1,0 +1,12 @@
+\section{Related Work}
+\label{sec:related_work}
+\para{Chain-of-thought for reasoning performance.} CoT prompting substantially improves reasoning accuracy in large models \citep{wei2022chain}, including zero-shot variants \citep{kojima2022large}. Self-consistency extends this idea by sampling multiple reasoning paths and aggregating answers \citep{wang2022self}. These studies primarily optimize end-task correctness; they do not directly test whether convergence improves across different behavioral axes.
+
+\para{Faithfulness and explanation-behavior mismatch.} A key challenge is that generated rationales are often not faithful to internal computation \citep{turpin2023language}. Follow-up work finds that jointly maximizing faithfulness and accuracy is difficult in practice \citep{ley2024hardness}. Faithful CoT methods attempt to reduce this gap \citep{xiao2023faithful}, but existing evaluations still focus on explanation quality or answer quality rather than global convergence.
+
+\para{Evaluation infrastructure and variance across tasks.} Broad benchmark efforts such as Chain-of-Thought Hub show strong task- and model-dependent variation in CoT outcomes \citep{fu2023cothub}. This motivates controlled, cross-axis measurement rather than single-metric claims.
+
+\para{Persona consistency and self-knowledge.} Persona-steered generation studies show that conditioning can alter behavior and amplify unwanted shifts \citep{alikhani2024evaluating}. Related work on self-knowledge and self-cognition reports incomplete alignment between stated traits and generated actions \citep{ai2024self,xu2024self}. Our work connects this line to CoT by testing whether explicit reasoning prompts stabilize or destabilize persona expression.
+
+\para{Positioning.} Unlike prior work that isolates one outcome (
+\eg accuracy, faithfulness, or persona drift), we evaluate CoT under one protocol across answer agreement, semantic similarity, and persona stability. This unified perspective is necessary to decide whether CoT improves reliability broadly or only in narrow task settings.

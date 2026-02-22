@@ -1,0 +1,33 @@
+\section{Results}
+\label{sec:results}
+\para{Main outcomes.} \Tabref{tab:reasoning_accuracy} shows that CoT effects are task dependent. For \gptmodel, CoT improves \gsm accuracy from 0.600 to 0.900 and \bbhlogic from 0.933 to 1.000, but lowers \bbhdate from 0.333 to 0.267. For \claudemodel, \gsm remains unchanged at 0.900, while BBH subsets decline (0.900 to 0.833 on \bbhdate; 1.000 to 0.933 on \bbhlogic).
+
+\input{tables/reasoning_accuracy}
+
+\para{Convergence beyond accuracy.} \Tabref{tab:agreement_persona} indicates that cross-model agreement increases only on \gsm (0.633 to 0.900) and is unchanged on both BBH tasks. Persona adherence remains nearly flat for \gptmodel (0.385 to 0.389) and decreases for \claudemodel (0.439 to 0.416). Persona stability decreases for both models, with a pronounced drop for \claudemodel (0.857 to 0.753).
+
+\input{tables/convergence_persona}
+
+\para{Statistical tests.} Most effects do not survive FDR correction. \Tabref{tab:stat_tests} summarizes the strongest signals: \gptmodel \gsm gain and \gsm agreement gain are near-significant after correction, while the \claudemodel persona-stability drop is significant ($p=0.00085$, FDR $p=0.0145$, $d=-0.679$).
+
+\input{tables/stat_tests}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.48\linewidth]{figures/accuracy_by_task_condition.png}
+    \hfill
+    \includegraphics[width=0.48\linewidth]{figures/semantic_convergence.png}
+    \caption{Left: accuracy by task and prompting condition. Right: embedding-based semantic convergence across tasks. CoT gains are concentrated in \gsm and do not generalize uniformly.}
+    \label{fig:accuracy_semantic}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.48\linewidth]{figures/persona_adherence.png}
+    \hfill
+    \includegraphics[width=0.48\linewidth]{figures/persona_stability.png}
+    \caption{Persona outcomes under \nocot and \cotprompt. Adherence shifts are modest, but stability declines under CoT, especially for \claudemodel.}
+    \label{fig:persona_results}
+\end{figure*}
+
+\para{Error patterns.} On \bbhdate, failures are dominated by temporal interpretation and option-extraction mistakes. On \gsm, \gptmodel \nocot errors often show plausible intermediate work but incorrect final arithmetic values. In persona generation, CoT outputs more meta-explanatory text, which likely reduces stylistic consistency and contributes to lower stability.
